@@ -1,7 +1,7 @@
 import {Router} from "express";
 const router= Router();
 
-router.get("/tasks", (req, res)=>{
+router.get("/", (req, res)=>{
     res.json([
         {
             title: "Task 1",
@@ -10,7 +10,7 @@ router.get("/tasks", (req, res)=>{
     ]);
 });
 
-router.post("/tasks", (req, res)=>{
+router.post("/", (req, res)=>{
     res.json({
         message: "Task created"
     });
