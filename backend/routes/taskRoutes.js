@@ -21,6 +21,7 @@ router.post("/", async (req, res)=>{
         })
 
         await task.save();
+        console.log("Task created successfully");
         res.status(201).json(task)
     }
     catch(error){
