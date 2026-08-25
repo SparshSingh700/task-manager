@@ -1,26 +1,18 @@
-import { useEffect , useState} from "react";
+import Login from "./Login.jsx";
+import Register from "./Register.jsx";
+import "./App.css";
 
 function App() {
-  const [tasks, setTasks] = useState([]);
-  useEffect(() => {
-    fetch("http://localhost:3000/tasks")
-      .then((response)=> response.json())
-      .then((data)=> setTasks(data))
-  }, []);
+    return (
+        <div className="app">
+            <h1>Task Manager</h1>
 
-  return(
-    <div>
-      <h1>Task Manager</h1>
-
-      {
-        tasks.map((task) => (
-        <p key={task._id}>{task.title}</p>
-        ))
-      }
-
-    </div>
-  );
-
+            <div className="auth-container">
+                <Login />
+                <Register />
+            </div>
+        </div>
+    );
 }
 
-export default App
+export default App;
