@@ -4,7 +4,9 @@ const router= Router();
 
 router.get("/", async (req, res)=>{
     try{
-        const tasks= await Task.find();
+        const tasks= await Task.find({
+            user: req.user.userId
+        });
         res.json(tasks);
     }
     catch(error){
@@ -17,7 +19,8 @@ router.get("/", async (req, res)=>{
 router.post("/", async (req, res)=>{
     try{
         const task= new Task({
-            title: req.body.title
+            title: req.body.title,
+            user: req.user.userId
         })
 
         await task.save();
