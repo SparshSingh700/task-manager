@@ -5,6 +5,7 @@ import cors from "cors";
 import connectDB from "./config/db.js";
 import taskRoutes from "./routes/taskRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
+import authMiddleware from "./middleware/authMiddleware.js";
 
 dotenv.config();
 await connectDB();
@@ -16,7 +17,7 @@ const port=process.env.PORT || 3000;
 app.use(express.json());
 app.use(cors());
 
-app.use("/api/tasks", taskRoutes);
+app.use("/api/tasks",authMiddleware, taskRoutes);
 app.use("/api/auth", authRoutes);
 
 app.get("/", (req,res)=>{
