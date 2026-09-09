@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-function Login() {
+function Login({onLogin}) {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [message, setMessage] = useState("");
@@ -35,6 +35,8 @@ function Login() {
                 return;
             }
 
+            localStorage.setItem("token", data.token);
+            onLogin(data.token);
             console.log(data);
             setMessage("Login successful");
         } catch (error) {
