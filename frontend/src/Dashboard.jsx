@@ -1,6 +1,6 @@
 import {useState, useEffect} from "react";
 
-function DashBoard() {
+function DashBoard({ onLogout }) {
     const [task,setTask] = useState([]);
 
     useEffect(() => {
@@ -12,6 +12,13 @@ function DashBoard() {
                         "Authorization": `Bearer ${token}`
                     }
                 });
+
+                if(response.status === 401){
+                    localStorage.removeItem("token");
+                    onLogout();
+                    return;
+                }
+
                 const data = await response.json();
                 setTask(data);
                 console.log(data);

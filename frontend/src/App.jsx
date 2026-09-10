@@ -11,7 +11,7 @@ function App() {
             <h1>Task Manager</h1>
 
             {token ? (
-                <Dashboard />
+                <Dashboard onLogout={() => setToken(null)}/>
             ) : (
                 <div className="auth-container">
                     <Login onLogin={setToken} />
