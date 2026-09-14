@@ -4,10 +4,33 @@ const router= Router();
 
 router.get("/", async (req, res)=>{
     try{
-        const tasks= await Task.find({
+        const page= Math.max(parseInt(req.query.page) || 1, 1);
+        const limit= Math.min(Math.max(parseInt(req.query.limit)|| 5 , 1),50);
+        const status= req.query.status || "all";
+
+        const filter= {
             user: req.user.userId
-        });
-        res.json(tasks);
+        };
+        if(status=== "completed"){
+            filter.completed=true;
+        }
+        if(status=== "active"){
+            filter.completed=false;
+        }
+        const total= await Task.countDocuments(filter);
+        const tasks=await Task.find(filter)
+                    .skip((page-1)*limit)
+                    .limit(limit)
+
+        res.json({
+            tasks,
+            pagination:{
+                page, 
+                limit,
+                total,
+                totalPages: Math.max(Math.ceil(total / limit), 1)
+            }
+        })
     }
     catch(error){
         res.status(500).json({

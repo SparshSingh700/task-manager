@@ -7,14 +7,18 @@ function DashBoard({ onLogout }) {
     const [editTitle, setEditTitle] = useState("");
     const [isLoading,  setIsLoading]= useState(true);
     const [error, setError] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalTasks, setTotalTasks] = useState(0);
+    const [refreshKey, setRefreshKey] = useState(0);
+    const [deletingTaskId, setDeletingTaskId] = useState(null);
 
     useEffect(() => {
         const token = localStorage.getItem("token");
         const fetchTasks = async () => {
-            setIsLoading(true);
             setError("");
             try {
-                const response = await fetch("http://localhost:3000/api/tasks", {
+                const response = await fetch(`http://localhost:3000/api/tasks?page=${currentPage}&limit=5`, {
                     headers: {
                         "Authorization": `Bearer ${token}`
                     }
@@ -30,7 +34,14 @@ function DashBoard({ onLogout }) {
                 }
 
                 const data = await response.json();
-                setTasks(data);
+                setTotalTasks(data.pagination.total);
+                const newTotalPages = data.pagination.totalPages;
+                setTotalPages(newTotalPages);
+                if (currentPage > newTotalPages) {
+                    setCurrentPage(newTotalPages);
+                    return;
+                }
+                setTasks(data.tasks);
             }
             catch (error) {
                 console.error("Error fetching tasks:", error);
@@ -42,7 +53,7 @@ function DashBoard({ onLogout }) {
         };
 
         fetchTasks();
-    }, []);
+    }, [currentPage, refreshKey]);
 
     const createTask = async () => {
         const token = localStorage.getItem("token");
@@ -58,10 +69,10 @@ function DashBoard({ onLogout }) {
                     title: newTask
                 })
             });
-
-            const data = await response.json();
-
-            setTasks(prevTasks => [...prevTasks, data]);
+            if(!response.ok){
+                throw new Error("Failed to create task");
+            }
+            setRefreshKey(prev=> prev+1 );
             setNewTask("");
         }
         catch (error) {
@@ -82,14 +93,16 @@ function DashBoard({ onLogout }) {
                 },
                 body: JSON.stringify(updates)
             });
-
+            if(!response.ok){
+                throw new Error("Failed to update task");
+            }
             const data = await response.json();
-
             setTasks(prevTasks =>
                 prevTasks.map(currentTask =>
                     currentTask._id === taskId ? data : currentTask
                 )
             );
+
         }
         catch (error) {
             console.error("Error updating task:", error);
@@ -100,6 +113,12 @@ function DashBoard({ onLogout }) {
     const deleteTask = async (taskId) => {
         const token = localStorage.getItem("token");
 
+        if (deletingTaskId === taskId) {
+            return;
+        }
+
+        setDeletingTaskId(taskId);
+
         try {
             const response = await fetch(`http://localhost:3000/api/tasks/${taskId}`, {
                 method: "DELETE",
@@ -108,16 +127,27 @@ function DashBoard({ onLogout }) {
                 }
             });
 
-            const data = await response.json();
-            console.log(data);
+            if (!response.ok) {
+                throw new Error("Failed to delete task");
+            }
 
+            await response.json();
+
+            // NEW: immediately remove the successfully deleted task
+            // from the current React state.
             setTasks(prevTasks =>
                 prevTasks.filter(currentTask => currentTask._id !== taskId)
             );
+
+            // KEEP: refetch from backend so pagination stays correct.
+            setRefreshKey(prev => prev + 1);
         }
         catch (error) {
             console.error("Error deleting task:", error);
             setError(error.message);
+        }
+        finally {
+            setDeletingTaskId(null);
         }
     };
 
@@ -172,7 +202,7 @@ function DashBoard({ onLogout }) {
                 <div className="tasks-section-header">
                     <h3>Tasks</h3>
                     <span className="task-count">
-                        {tasks.length} {tasks.length === 1 ? "task" : "tasks"}
+                        {totalTasks} {totalTasks === 1 ? "task" : "tasks"}
                     </span>
                 </div>
 
@@ -267,8 +297,9 @@ function DashBoard({ onLogout }) {
                                     <button
                                         className="delete-button"
                                         onClick={() => deleteTask(task._id)}
+                                        disabled={deletingTaskId === task._id}
                                     >
-                                        Delete
+                                        {deletingTaskId === task._id ? "Deleting..." : "Delete"}
                                     </button>
                                 </div>
 
@@ -278,6 +309,23 @@ function DashBoard({ onLogout }) {
                 )}
             </div>
 
+            <div className="pagination">
+                <button
+                    onClick={()=>setCurrentPage(prev=> prev-1)}
+                    disabled={currentPage === 1}
+                >
+                    Previous
+                </button>
+                <span>
+                    Page {currentPage} of {totalPages}
+                </span>
+                <button
+                    onClick={()=>setCurrentPage(prev=> prev+1)}
+                    disabled={currentPage === totalPages}
+                >
+                    Next
+                </button>
+            </div>
         </div>
     );
 }
